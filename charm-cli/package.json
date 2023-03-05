@@ -1,0 +1,20 @@
+{
+  "name": "charm-cli",
+  "version": "0.1.0",
+  "description": "",
+  "main": "dist/index.js",
+  "bin": {
+    "charm": "./dist/index.js"
+  },
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "chokidar": "^3.5.3",
+    "fs-extra": "^10.1.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5"
+  }
+}
