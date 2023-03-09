@@ -3,14 +3,18 @@ interface SeamOptions
     updateMillis?: number
     updateEveryFrame?: boolean
 }
-export type Seam = (value?: any, update?: boolean) => any;
-export type SeamValue = () => any;
+export type Seam<T> = (value?: T | SeamValue<T>, update?: boolean) => T;
+export type SeamValue<T> = () => T;
 
-export function sew(startValue: any | SeamValue, options?: SeamOptions)
+export type AttributeSetter<T> = (value: T) => void;
+export type AttributeGetter<T> = () => T;
+export type AttributeSeamSetter<T> = (seam: Seam<T>) => void;
+
+export function sew<T>(startValue: T | SeamValue<T>, options?: SeamOptions)
 {
-    const boundSeams: Seam[] = [];
+    const boundSeams: Seam<any>[] = [];
 
-    const newSeam: Seam = (value?: any, update?: boolean) =>
+    const newSeam: Seam<T> = (value?: T | SeamValue<T>, update?: boolean) =>
     {
         if(seamsToResolve.length > 0)
         {
@@ -27,7 +31,7 @@ export function sew(startValue: any | SeamValue, options?: SeamOptions)
 
         if(isSetOperation)
         {
-            startValue = value;
+            startValue = value!;
 
             seamsToResolve.push(newSeam);
             getValue(startValue);
@@ -53,7 +57,33 @@ export function sew(startValue: any | SeamValue, options?: SeamOptions)
     return newSeam;
 }
 
-function updateInnerSeams(boundSeams: Seam[])
+export function createAttributeSeam<T>(getter: AttributeGetter<T>, setter: AttributeSetter<T>, seamSetter: AttributeSeamSetter<T>)
+{
+    return (attribute?: T | SeamValue<T>) =>
+    {
+        if(attribute)
+        {
+            if(typeof attribute != 'function')
+            {
+                setter(attribute);
+                return; 
+            }
+            else
+            {
+                seamSetter(sew(() =>
+                {
+                    const value = (attribute as SeamValue<T>)();
+                    setter(value);
+                    return value;
+                }));
+            }
+        }
+
+        return getter();
+    }
+}
+
+function updateInnerSeams(boundSeams: Seam<any>[])
 {
     boundSeams.forEach((innerSeam) =>
     {
@@ -61,7 +91,7 @@ function updateInnerSeams(boundSeams: Seam[])
     });
 }
 
-function loopSeam(func: Seam, everyMillis: number)
+function loopSeam<T>(func: Seam<T>, everyMillis: number)
 {
     setTimeout(() =>
     {
@@ -70,17 +100,17 @@ function loopSeam(func: Seam, everyMillis: number)
     }, everyMillis);
 }
 
-function updateSeam(func: Seam)
+function updateSeam<T>(func: Seam<T>)
 {
-    func(null, true);
+    func(undefined, true);
 }
 
-function getValue(value: any)
+function getValue<T>(value: T | SeamValue<T>)
 {
     if(typeof value == 'function')
-        return value();
+        return (value as SeamValue<T>)();
     else
         return value;
 }
 
-const seamsToResolve: Seam[] = [];
+const seamsToResolve: Seam<any>[] = [];

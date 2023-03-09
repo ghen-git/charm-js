@@ -1,4 +1,10 @@
 import { CharmNode } from "./charm-node";
+import "./svg";
+
+// addEventListener('load', () =>
+// {
+//     observer.observe(document.body, { attributes: false, childList: true, subtree: true });
+// });
 
 /**
  * Transforms the element into a Charm Node

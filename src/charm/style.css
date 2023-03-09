@@ -12,3 +12,8 @@ body
 
     min-height: 100vh;
 }
+
+svg.fullscreen
+{
+    position: fixed;
+}

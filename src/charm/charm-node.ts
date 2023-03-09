@@ -1,84 +1,37 @@
-import { sew, SeamValue } from "./seams";
+import { Seam, createAttributeSeam } from "./seams";
 
 export class CharmNode 
 {
     /** the vanilla HTML element representation of the node. Should be used for vanilla interactions with the node, such as appending it to the DOM */
     html: HTMLElement;
-    textSetter: Function | undefined;
-    widthSetter: Function | undefined;
-    heightSetter: Function | undefined;
+    
+    textSeam: Seam<string> | undefined;
+    widthSeam: Seam<number> | undefined;
+    heightSeam: Seam<number> | undefined;
 
     constructor(element: HTMLElement) 
     {
         this.html = element;
     }
 
-    text(text?: string | SeamValue)
-    {
-        if(text)
-        {
-            if(typeof text == 'string')
-            {
-                this.html.textContent = text;
-                return;
-            }
-            else
-            {
-                this.textSetter = sew(() =>
-                {
-                    const value = text();
-                    this.html.textContent = value;
-                    return value;
-                });
-            }
-        }
+    text = createAttributeSeam
+    (
+        () => this.html.textContent,
+        (v) => this.html.textContent = v,
+        (v) => this.textSeam = v as Seam<string>
+    );
 
-        return this.html.textContent;
-    }
+    width = createAttributeSeam
+    (
+        () => this.html.getBoundingClientRect().width,
+        (v) => this.html.style.width = v + 'px',
+        (v) => this.widthSeam = v as Seam<number>
+    );
 
-    width(width?: number | SeamValue)
-    {
-        if(width)
-        {
-            if(typeof width == 'number')
-            {
-                this.html.style.width = width + 'px';
-                return;
-            }
-            else
-            {
-                this.widthSetter = sew(() =>
-                {
-                    const value = width();
-                    this.html.style.width = value + 'px';
-                    return value;
-                });
-            }
-        }
-
-        return this.html.getBoundingClientRect().width;
-    }
-
-    height(height?: number | SeamValue)
-    {
-        if(height)
-        {
-            if(typeof height == 'number')
-            {
-                this.html.style.height = height + 'px';
-                return;
-            }
-            else
-            {
-                this.heightSetter = sew(() =>
-                {
-                    const value = height();
-                    this.html.style.height = value + 'px';
-                    return value;
-                });
-            }
-        }
-
-        return this.html.getBoundingClientRect().height;
-    }
+    height = createAttributeSeam
+    (
+        () => this.html.getBoundingClientRect().height,
+        (v) => this.html.style.height = v + 'px',
+        (v) => this.heightSeam = v as Seam<number>
+    );
 }
