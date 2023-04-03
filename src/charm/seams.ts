@@ -57,27 +57,27 @@ export function sew<T>(startValue: T | SeamValue<T>, options?: SeamOptions)
     return newSeam;
 }
 
-export function createAttributeSeam<T>(getter: AttributeGetter<T>, setter: AttributeSetter<T>, seamSetter: AttributeSeamSetter<T>)
+export function createAttributeSeam<T>(getter: AttributeGetter<T>, 
+                                       setter: AttributeSetter<T>, 
+                                       seamSetter: AttributeSeamSetter<T>)
 {
     return (attribute?: T | SeamValue<T>) =>
     {
-        if(attribute)
+        if(!attribute)
+            return getter();
+    
+        if(typeof attribute != 'function')
         {
-            if(typeof attribute != 'function')
-            {
-                setter(attribute);
-                return; 
-            }
-            else
-            {
-                seamSetter(sew(() =>
-                {
-                    const value = (attribute as SeamValue<T>)();
-                    setter(value);
-                    return value;
-                }));
-            }
+            setter(attribute);
+            return; 
         }
+
+        seamSetter(sew(() =>
+        {
+            const value = (attribute as SeamValue<T>)();
+            setter(value);
+            return value;
+        }));
 
         return getter();
     }

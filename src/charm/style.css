@@ -15,5 +15,31 @@ body
 
 svg.fullscreen
 {
-    position: fixed;
+    position: absolute;
+    pointer-events: none; 
+    width: 100vw; 
+    height: 100vh;
+}
+
+.pivot
+{
+    position: absolute; 
+    width: 0; 
+    height: 0;
+}
+
+.pivot.center
+{
+    left: 50%;
+    top: 50%;
+}
+
+.pivot.left
+{
+    left: 0;
+}
+
+.pivot.right
+{
+    left: 100%;
 }
