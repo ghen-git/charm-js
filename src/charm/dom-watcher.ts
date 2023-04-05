@@ -2,16 +2,28 @@ const observer = new MutationObserver(onDOMChange);
 const elementsInTheLimbo: HTMLElement[] = [];
 
 type ElementAddedCallback = (element: HTMLElement) => void;
+type attrChangedCallback = (element: HTMLElement, value: string, fullName: string) => void;
 const elementAddedCallbacks: ElementAddedCallback[] = [];
+const attrChangedCallbacks = new Map<string, attrChangedCallback>();
 
 export function onElementAdded(callback: ElementAddedCallback)
 {
     elementAddedCallbacks.push(callback);
 }
 
+export function onAttributeChanged(attribute: string, callback: attrChangedCallback)
+{
+    attrChangedCallbacks.set(attribute, callback);
+}
+
 addEventListener('load', () =>
 {
-    observer.observe(document.body, { attributes: false, childList: true, subtree: true });
+    observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+});
+
+addEventListener('DOMContentLoaded', () =>
+{
+    document.querySelectorAll('body *').forEach(onNodeAdded);
 });
 
 function onDOMChange(mutations: MutationRecord[])
@@ -20,7 +32,31 @@ function onDOMChange(mutations: MutationRecord[])
     {
         mutation.addedNodes.forEach(onNodeAdded);
         mutation.removedNodes.forEach(onNodeRemoved);
+        
+        if(mutation.attributeName)
+            attributeChanged(mutation)
     });
+}
+
+function attributeChanged(mutation: MutationRecord)
+{
+    const element = mutation.target! as HTMLElement;
+    const attribute = mutation.attributeName!;
+
+    findAttributeCallback(element, attribute);
+
+}
+
+function findAttributeCallback(element: HTMLElement, attribute: string)
+{
+    for(const key of attrChangedCallbacks.keys())
+    {
+        if(attribute.includes(key))
+        {
+            attrChangedCallbacks.get(key)!(element, element.getAttribute(attribute)!, attribute);
+            break;
+        }
+    }
 }
 
 function onNodeAdded(node: Node)
@@ -46,6 +82,9 @@ function onNodeAdded(node: Node)
             elementsInTheLimbo.splice(elementsInTheLimbo.indexOf(element), 1);
             console.log(`Element ${element.localName} has exited the limbo`);
         }
+
+        for(const attribute of element.getAttributeNames())
+            findAttributeCallback(element, attribute);
 
         elementAddedCallbacks.forEach((callback) => callback(element));
     }

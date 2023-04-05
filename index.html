@@ -10,7 +10,38 @@
   </head>
   <body style="display: grid; place-items: center;">
     <div style="position: relative;">
-      COck and balls
+      <button text="Animate the fuck out of this page"
+        charm-click="
+        {
+          animation:[
+          {
+            lines: [
+              {from: screen.top-left, to: top-left},
+              {from: screen.top-right, to: top-right},
+              {from: screen.bottom-left, to: bottom-left},
+              {from: screen.bottom-right, to: bottom-right}
+            ],
+            duration: 1s,
+            length: 10,
+            discard: true
+          },
+          {
+            lines: [
+              {from: top-left, to: top-center},
+              {from: top-right, to: top-center},
+              {from: bottom-left, to: bottom-center},
+              {from: bottom-right, to: bottom-center},
+              {from: top-left, to: mid-left},
+              {from: top-right, to: mid-right},
+              {from: bottom-left, to: mid-left},
+              {from: bottom-right, to: mid-right}
+            ],
+            stick: start,
+            duration: 1s,
+            length: 10
+          }]
+        }"
+        />
       <div class="pivot center">
         <svg class="fullscreen" style="transform: translate(-50%, -50%)" xmlns="http://www.w3.org/2000/svg">
         </svg>

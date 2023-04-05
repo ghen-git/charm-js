@@ -1,10 +1,9 @@
 import { CharmNode } from "./charm-node";
 import "./svg";
+import { onAttributeChanged } from "./dom-watcher";
+import { parse } from "./parser";
 
-// addEventListener('load', () =>
-// {
-//     observer.observe(document.body, { attributes: false, childList: true, subtree: true });
-// });
+onAttributeChanged('charm-', parse);
 
 /**
  * Transforms the element into a Charm Node
@@ -30,18 +29,3 @@ export function charm(element: HTMLElement | string)
 
     return node;
 }
-
-// import { onElementAdded } from "./dom-watcher";
-
-// onElementAdded((element: HTMLElement) =>
-// {
-    
-// });
-
-// function render()
-// {
-
-//     requestAnimationFrame(render);
-// }
-
-// requestAnimationFrame(render);

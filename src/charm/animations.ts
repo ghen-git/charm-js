@@ -1,6 +1,6 @@
 import { Animatable } from "./animatable";
 
-interface Animation
+interface AnimationInstance
 {
     element: Animatable, 
     duration: number;
@@ -26,7 +26,7 @@ const timingFunctions =
     easeInOut
 ]
 
-const pipeline: Animation[] = [];
+const pipeline: AnimationInstance[] = [];
 
 export function animate(element: Animatable, seconds: number, delay: number, timingFunction: TimingFunction = TimingFunction.linear)
 {    
