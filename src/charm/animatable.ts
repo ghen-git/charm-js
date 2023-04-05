@@ -1,10 +1,10 @@
-import { Vec2 } from "./geometry";
-
 export type AnimationTick = (step: number) => void;
-export type StartingPositionGetter = () => Vec2;
+export type EndAnimation = () => void;
+export type SnapEnd = () => void;
 
 export interface Animatable
 {
     animationTick: AnimationTick;
-    getStartingPos: StartingPositionGetter;
+    endAnimation: EndAnimation;
+    snapEnd: SnapEnd;
 }

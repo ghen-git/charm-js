@@ -1,37 +1,82 @@
 import { Animatable } from "./animatable";
-import { Vec2 } from "./geometry";
 
 interface Animation
 {
     element: Animatable, 
     duration: number;
+    durationWithDelay: number;
     secondsElapsed: number;
+    timingFunction: Function | null;
+    callback: Function;
 }
+
+export enum TimingFunction
+{
+    linear = 0,
+    easeIn,
+    easeOut,
+    easeInOut
+}
+
+const timingFunctions = 
+[
+    null,
+    easeIn,
+    easeOut,
+    easeInOut
+]
 
 const pipeline: Animation[] = [];
 
-export function animateLinear(element: Animatable, seconds: number)
+export function animate(element: Animatable, seconds: number, delay: number, timingFunction: TimingFunction = TimingFunction.linear)
 {    
-    pipeline.push({element, duration: seconds * 1000, secondsElapsed: 0.0})
+    return new Promise(resolve =>
+    {    
+        pipeline.push({
+            element,
+            duration: seconds * 1000,
+            durationWithDelay: (seconds + delay) * 1000,
+            secondsElapsed: 0,
+            timingFunction: timingFunctions[timingFunction],
+            callback: resolve
+        });
+    })
+
 }
 
 let start: number = Date.now();
 
-function animate()
+function tick()
 {
-    const deltaTime = getDeltaTime();
+    const deltaTime = getDeltaTime()
 
     for(const animation of pipeline)
-    {
-        if(animation.secondsElapsed > animation.duration)
+    {   
+        if(animation.secondsElapsed > animation.durationWithDelay)
+        {
+            animation.element.endAnimation();
+            animation.callback();
+            pipeline.splice(pipeline.indexOf(animation), 1);
             continue;
+        }
 
-        const animationStep = (animation.secondsElapsed + deltaTime) / animation.duration / 100;
-        animation.element.animationTick(animationStep);
+        if(animation.secondsElapsed + deltaTime >= animation.duration && animation.secondsElapsed < animation.duration)
+        {
+            animation.element.snapEnd();
+            animation.secondsElapsed += deltaTime;
+            continue;
+        }
+
+        let t = animation.secondsElapsed / animation.duration;
+
+        if(t < 1 && animation.timingFunction)
+            t = animation.timingFunction(t);
+
+        animation.element.animationTick(t);
         animation.secondsElapsed += deltaTime;
     }
 
-    requestAnimationFrame(animate);
+    requestAnimationFrame(tick);
 }
 
 function getDeltaTime()
@@ -43,4 +88,19 @@ function getDeltaTime()
     return delta;
 }
 
-requestAnimationFrame(animate);
+function easeIn(t: number)
+{
+    return t*t;
+}
+
+function easeOut(t: number)
+{
+    return 1 - (t - 1)*(t - 1);
+}
+
+function easeInOut(t: number)
+{
+    return t * t * (3 - 2*t);
+}
+
+requestAnimationFrame(tick);
