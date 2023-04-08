@@ -3,10 +3,16 @@ export class Vec2
     x: number
     y: number
 
-    constructor(x: number, y: number)
+    public static zero = new Vec2(0, 0);
+
+    constructor(x: number, y?: number)
     {
         this.x = x;
-        this.y = y;
+        
+        if(!y)
+            this.y = x;
+        else
+            this.y = y;
     }
 
     static distance(v1: Vec2, v2: Vec2)

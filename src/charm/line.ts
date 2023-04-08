@@ -16,8 +16,14 @@ export class Line implements Animatable
 
     private animationDelay: number = 0;
 
-    constructor(from: Vec2, to: Vec2)
+    constructor(from?: Vec2, to?: Vec2)
     {
+        if(!from)
+            from = Vec2.zero;
+
+        if(!to)
+            to = Vec2.zero;
+
         this.from = from.clone();
         this.to = to.clone();
 
@@ -37,7 +43,7 @@ export class Line implements Animatable
         this.svg.setAttribute('stroke', '#e1e1e1');
         this.svg.setAttribute('stroke-width', '1px');
 
-        // document.querySelector('svg')!.appendChild(this.element);
+        document.querySelector('svg')!.appendChild(this.svg);
     }
 
     snapEnd()

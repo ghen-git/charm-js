@@ -10,6 +10,8 @@ export type AttributeSetter<T> = (value: T) => void;
 export type AttributeGetter<T> = () => T;
 export type AttributeSeamSetter<T> = (seam: Seam<T>) => void;
 
+const seamsToResolve: Seam<any>[] = [];
+
 export function sew<T>(startValue: T | SeamValue<T>, options?: SeamOptions)
 {
     const boundSeams: Seam<any>[] = [];
@@ -112,5 +114,3 @@ function getValue<T>(value: T | SeamValue<T>)
     else
         return value;
 }
-
-const seamsToResolve: Seam<any>[] = [];

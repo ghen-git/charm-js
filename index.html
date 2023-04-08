@@ -16,28 +16,18 @@
           animation:[
           {
             lines: [
-              {from: screen.top-left, to: top-left},
-              {from: screen.top-right, to: top-right},
-              {from: screen.bottom-left, to: bottom-left},
-              {from: screen.bottom-right, to: bottom-right}
+              {from: 0, to: 100}
             ],
-            duration: 1s,
-            length: 10,
+            duration: 1,
+            length: 50,
             discard: true
           },
           {
             lines: [
-              {from: top-left, to: top-center},
-              {from: top-right, to: top-center},
-              {from: bottom-left, to: bottom-center},
-              {from: bottom-right, to: bottom-center},
-              {from: top-left, to: mid-left},
-              {from: top-right, to: mid-right},
-              {from: bottom-left, to: mid-left},
-              {from: bottom-right, to: mid-right}
+              {from: 100, to: 300}
             ],
-            stick: start,
-            duration: 1s,
+            stick: true,
+            duration: 1,
             length: 10
           }]
         }"
