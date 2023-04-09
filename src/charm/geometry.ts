@@ -9,9 +9,9 @@ export class Vec2
     {
         this.x = x;
         
-        if(!y)
+        if(y == undefined)
             this.y = x;
-        else
+        else    
             this.y = y;
     }
 
@@ -29,5 +29,21 @@ export class Vec2
     {
         this.x = v.x;
         this.y = v.y;
+    }
+
+    plus(v: Vec2)
+    {
+        return new Vec2(this.x + v.x, this.y + v.y);
+    }
+
+    minus(v: Vec2)
+    {
+        v = v.times(-1);
+        return new Vec2(this.x + v.x, this.y + v.y);
+    }
+
+    times(k: number)
+    {
+        return new Vec2(this.x * k, this.y * k);
     }
 }

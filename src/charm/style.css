@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;0,1000;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900;1,1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 *
 {
     margin: 0;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: 'Barlow';
 }
 
 body
@@ -15,10 +16,19 @@ body
 
 svg.fullscreen
 {
-    position: absolute;
+    position: fixed;
     pointer-events: none; 
     width: 100vw; 
     height: 100vh;
+}
+
+svg.animation-result
+{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; 
 }
 
 .pivot
@@ -42,4 +52,14 @@ svg.fullscreen
 .pivot.right
 {
     left: 100%;
+}
+
+button
+{
+    font-size: 16pt;
+    color: white;
+    border: none;
+    outline: none;
+    background-color: #1f1f1f;
+    padding: 20px;
 }

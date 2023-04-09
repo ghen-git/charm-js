@@ -2,6 +2,7 @@ import { Animation, AnimationOptions, LineAnimation } from "./animation";
 import { TimingFunction } from "./animations";
 import { Vec2 } from "./geometry";
 import { Line } from "./line";
+import { stringToHTML } from "./qol";
 
 interface Instructions
 {
@@ -31,7 +32,7 @@ interface LineAnimationInstructions
     timingFunction?: TimingFunction
 }
 
-export async function parse(element: HTMLElement, instructionsString: string, attrName: string)
+export function parse(element: HTMLElement, instructionsString: string, attrName: string)
 {
     const instructions = parseToJSON(instructionsString) as Instructions;
 
@@ -42,19 +43,43 @@ export async function parse(element: HTMLElement, instructionsString: string, at
         animations.push(parseAnimation(element, animationInstructions));
     }
 
-    console.log(animations);
+    const event = attrName.replace('charm-', '');
 
-    for(const animation of animations)
+    element.addEventListener(event, async() =>
     {
-        await animation.animate();
+        const lines: Line[] = [];
+
+        for(const animation of animations)
+        {
+            const animationLines = await animation.animate();
+            animationLines.forEach(line => lines.push(line));
+        }
+
+        fixToElement(element, lines);
+    })
+}
+
+function fixToElement(element: HTMLElement, lines: Line[])
+{
+    let svg = element.querySelector('.animation-result') as HTMLElement;
+    if(svg == null)
+    {
+        svg = stringToHTML('<svg xmlns="http://www.w3.org/2000/svg" class="animation-result"></svg>');
     }
 }
 
+const whitespaces = /\s/g;
+// const vectorsWithPipes = /(:)([^\{\}\:"']+\|[^\{\}\:"']+)([,\}])/g;
+const textWithoutBrackets = /(:)((?:[^"])[^{}"]+)([},])/g;
+const fieldNames = /([^'"])([A-Za-z]+)([^'"])(:)/g;
+const digitsWithBrackets = /(")([0-9]+)(")/g;
+
 function parseToJSON(s: string)
 {
-    s = s.replace(/\s/g, "");
-    s = s.replace(/(['"])?([a-z0-9A-Z_\.-]+)(['"])?/g, '"$2"');
-    s = s.replace(/(")([0-9]+)(")/g, '$2');
+    s = s.replace(whitespaces, "");
+    s = s.replace(fieldNames, '$1"$2$3"$4');
+    s = s.replace(textWithoutBrackets, '$1"$2"$3');
+    s = s.replace(digitsWithBrackets, '$2');
 
     return JSON.parse(s);
 }
@@ -66,24 +91,16 @@ function parseAnimation(element: HTMLElement, instructions: AnimationInstruction
     const options = getOptions(instructions);
 
     for(const line of instructions.lines!)
-        lines.push(parseLine(element, line, options));
+        lines.push(parseLine(line));
 
-    return new Animation(lines, options)
+    return new Animation(element, lines, options)
 }
 
-function parseLine(element: HTMLElement, instructions: LineAnimationInstructions, globalOptions: AnimationOptions): LineAnimation
-{
-    const from = parseFloat(instructions.from);
-    const to = parseFloat(instructions.to);
-
-    const line = new Line(new Vec2(from), new Vec2(from));
-
-    const endFrom = instructions.stick || globalOptions.stick ? new Vec2(from) : new Vec2(to);
-    
+function parseLine(instructions: LineAnimationInstructions): LineAnimation
+{    
     return {
-        line: line,
-        endFrom: endFrom,
-        endTo: new Vec2(to),
+        from: instructions.from,
+        to: instructions.to,
         options: getOptions(instructions)
     }
 }
@@ -106,4 +123,265 @@ function getOptions(instructions: LineAnimationInstructions | AnimationInstructi
         options.timingFunction = instructions.timingFunction;
 
     return options;
+}
+
+const isVectorsWithPipe = /^[^\|]+\|[^\|]+$/;
+
+export function getLineTips(s: string, element: HTMLElement)
+{
+    if(!isVectorsWithPipe.test(s))
+    {
+        const v = getVector(s, element);
+
+        if(v)
+            return [v, v.clone()];
+    }
+    
+    const vectorStrings = s.split('|');
+
+    const v1 = getVector(vectorStrings[0], element);
+    const v2 = getVector(vectorStrings[1], element);
+
+    if(v1 && v2)
+        return [v1, v2];
+    
+    return;
+}
+
+const isTwoNumbers = /^\[[^,]+,[^,]+\]$/;
+const isSumOfVectors = /\+(?![^[]*\])/g;
+const isVectorTimesNumber = /\*(?![^[]*\])/g;
+const isCssVectorSelector = /^[\#\.]?(\.?[A-Za-z\-]+)+$/;
+
+function getVector(s: string, element: HTMLElement): Vec2 | undefined
+{
+    if(isTwoNumbers.test(s))
+    {
+        const numberStr = s.split(',');
+
+        numberStr[0] = numberStr[0].replace('[', '');
+        numberStr[1] = numberStr[1].replace(']', '');
+
+        const n1 = getNumber(numberStr[0], element);
+        const n2 = getNumber(numberStr[1], element);
+
+        if(n1 != undefined && n2 != undefined)
+            return new Vec2(n1, n2);
+    }
+    else if(isSumOfVectors.test(s))
+    {
+        const v1str = s.substring(0, s.search(isSumOfVectors));
+        const v2str = s.substring(s.search(isSumOfVectors) + 1);
+
+        const v1 = getVector(v1str, element);
+        const v2 = getVector(v2str, element);
+
+        if(v1 && v2)
+            return v1.plus(v2);
+    }
+    else if(isVectorTimesNumber.test(s))
+    {
+        const str1 = s.substring(0, s.search(isVectorTimesNumber));
+        const str2 = s.substring(s.search(isVectorTimesNumber) + 1);
+
+        const test = getVector(str1, element);
+        
+        if(!test)
+        {
+            const n1 = getNumber(str1, element);
+            const v2 = getVector(str2, element);
+
+            if(n1 != undefined && v2)
+                return v2.times(n1);
+        }
+        else
+        {
+            const n2 = getNumber(str2, element)
+
+            if(n2 != undefined)
+                return test.times(n2);
+        }
+    }
+    else if(isCssVectorSelector.test(s)) // css selector
+    {
+        return parseVectorCssSelector(s, element);
+    }
+
+    return undefined;
+}
+
+const isMathFormula = /^[\d\+\-\*\/\(\)\.]+$/;
+const hasCssNumberSelectors = /[\#\.]?(\.?[A-Za-z\-]+)+/g
+
+function getNumber(s: string, element: HTMLElement): number | undefined
+{
+    if(isMathFormula.test(s)) // digits
+    {
+        return Function(`'use strict'; return (${s})`)();
+    }
+    else if(hasCssNumberSelectors.test(s))
+    {
+        const matches = s.match(hasCssNumberSelectors);
+
+        for(let i = matches!.length - 1; i >= 0; i--)
+        {
+            if(matches![i].substring(matches![i].length - 1) == '-')
+                matches![i] = matches![i].substring(0, matches![i].length - 1);
+
+            const n = parseNumberCssSelector(matches![i], element);
+            
+            if(n == undefined)
+                return;
+
+            s = s.replaceAll(matches![i], n.toString());
+        }
+
+        return getNumber(s, element);
+    }
+
+    return;
+}
+
+function parseNumberCssSelector(s: string, element: HTMLElement): number | undefined
+{
+    if(!s.includes('.'))
+        return;
+
+    const vectorCssSelector = s.substring(0, s.lastIndexOf('.'));
+    const axis = s.substring(s.lastIndexOf('.') + 1);
+
+    const v = parseVectorCssSelector(vectorCssSelector, element);
+
+    if(!v)
+        return;
+
+    if(axis == 'x')
+        return v.x;
+    else if(axis == 'y')
+        return v.y;
+
+    return;
+}
+
+const positions = ['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+const windowBoundingRect: DOMRect = {
+    x: 0, y: 0, width: window.innerWidth, height: window.innerHeight, 
+    bottom: 0, left: 0, right: 0, top: 0, toJSON: () => {}
+};
+
+function parseVectorCssSelector(s: string, element: HTMLElement): Vec2 | undefined
+{
+    const sHasDots = s.includes('.');
+    const indexOfFirstDot = sHasDots ? s.indexOf('.') : s.length;
+
+    const target = s.substring(0, indexOfFirstDot);
+    const selector = sHasDots ? s.substring(indexOfFirstDot + 1) : '';
+
+    if(positions.includes(target))
+    {
+        return getLocalPosition(element, target);
+    }
+    else if(target == 'screen')   
+    {
+        return getLocalPosition(undefined, selector, windowBoundingRect);
+    }
+    else
+    {
+        const posSelector = !selector.includes('.') ? '' : selector.substring(selector.lastIndexOf('.') + 1);
+        let selectedElement: HTMLElement | null = null;
+
+        if(positions.includes(posSelector))
+        {
+            const elementSelector = selector.substring(0, selector.lastIndexOf('.'));
+            selectedElement = document.querySelector(elementSelector);
+        }
+        else
+            selectedElement = document.querySelector(posSelector);
+
+        if(selectedElement)
+            return getLocalPosition(selectedElement!, posSelector);
+    }
+
+    return undefined;
+}
+
+function getLocalPosition(element: HTMLElement | undefined, selector: string, rect?: DOMRect)
+{
+    const box = rect ? rect : element!.getBoundingClientRect();
+
+    switch(selector)
+    {
+        case 'top-left':
+        {
+            return new Vec2(
+                box.x,
+                box.y
+            );
+        }
+        case 'top-center':
+        {
+            return new Vec2(
+                box.x + box.width / 2,
+                box.y
+            );
+        }
+        case 'top-right':
+        {
+            return new Vec2(
+                box.x + box.width,
+                box.y
+            );
+        }
+        case 'mid-left':
+        {
+            return new Vec2(
+                box.x,
+                box.y + box.height / 2
+            );
+        }
+        case 'center':
+        {
+            return new Vec2(
+                box.x + box.width / 2,
+                box.y + box.height / 2
+            );
+        }
+        case 'mid-right':
+        {
+            return new Vec2(
+                box.x + box.width,
+                box.y + box.height / 2
+            );
+        }
+        case 'bottom-left':
+        {
+            return new Vec2(
+                box.x,
+                box.y + box.height
+            );
+        }
+        case 'bottom-center':
+        {
+            return new Vec2(
+                box.x + box.width / 2,
+                box.y + box.height
+            );
+        }
+        case 'bottom-right':
+        {
+            return new Vec2(
+                box.x + box.width,
+                box.y + box.height
+            );
+        }
+        case '':
+        {
+            return new Vec2(
+                box.x + box.width / 2,
+                box.y + box.height / 2
+            );
+        }
+    }
+
+    return;
 }

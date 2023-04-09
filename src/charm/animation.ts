@@ -1,12 +1,12 @@
 import { TimingFunction } from "./animations";
 import { Vec2 } from "./geometry";
 import { Line } from "./line";
+import { getLineTips } from "./parser";
 
 export interface LineAnimation
 {
-    line: Line,
-    endFrom: Vec2,
-    endTo: Vec2,
+    from: string,
+    to: string,
     options?: AnimationOptions
 }
 
@@ -23,7 +23,7 @@ export interface AnimationOptions
 const defaultOptions: AnimationOptions = {
     duration: 0.5,
     delay: 0,
-    timingFunction: TimingFunction.linear,
+    timingFunction: TimingFunction.easeInOut,
     minLength: 10,
     stick: false,
     discard: false
@@ -31,11 +31,13 @@ const defaultOptions: AnimationOptions = {
 
 export class Animation
 {
+    element: HTMLElement;
     lineAnimations: LineAnimation[];
     globalOptions: AnimationOptions | undefined;
 
-    constructor(lines: LineAnimation[], options?: AnimationOptions)
+    constructor(element: HTMLElement, lines: LineAnimation[], options?: AnimationOptions)
     {
+        this.element = element;
         this.lineAnimations = lines;
         this.globalOptions = options;
 
@@ -45,10 +47,10 @@ export class Animation
 
     async animate()
     {
-        return new Promise<void>(resolve => this.animatePromise(resolve));
+        return new Promise<Line[]>(resolve => this.animatePromise(resolve));
     }
 
-    animatePromise(resolve: (out: void | PromiseLike<void>) => void)
+    animatePromise(resolve: (out: Line[] | PromiseLike<Line[]>) => void)
     {
         let longestAnimationPointer: LineAnimation | null = null;
         let longestAnimationLength: number = 0;
@@ -64,23 +66,40 @@ export class Animation
             }
         }
 
+        const lines: Line[] = [];
+
         for(const animation of this.lineAnimations)
         {
             setTimeout(() =>
             {
-                animation.line.animateWithMinLengthA(
-                    animation.endFrom,
-                    animation.endTo,
+                const from = getLineTips(animation.from, this.element);
+                const to = getLineTips(animation.to, this.element);
+
+                if(!from || !to)
+                    resolve(lines);
+
+                const line = new Line(from![0], from![1]);
+            
+                document.querySelector('#animation-canvas')!.appendChild(line.svg);
+            
+                const endFrom = animation.options!.stick || this.globalOptions!.stick ? from![0] : to![0];
+
+                if(!animation.options!.discard!)
+                    lines.push(line);
+
+                line.animateWithMinLengthA(
+                    endFrom,
+                    to![1],
                     animation.options!.duration!,
                     animation.options!.minLength!,
                     animation.options!.timingFunction!
                 ).then(() =>
                 {
                     if(animation.options!.discard)
-                        animation.line.svg.remove();
+                        line.svg.remove();
 
                     if(animation == longestAnimationPointer)
-                        resolve();
+                        resolve(lines);
                 });
             }, animation.options!.delay!);
         }

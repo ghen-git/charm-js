@@ -43,7 +43,7 @@ export class Line implements Animatable
         this.svg.setAttribute('stroke', '#e1e1e1');
         this.svg.setAttribute('stroke-width', '1px');
 
-        document.querySelector('svg')!.appendChild(this.svg);
+        // document.querySelector('svg')!.appendChild(this.svg);
     }
 
     snapEnd()

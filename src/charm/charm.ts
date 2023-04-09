@@ -2,8 +2,14 @@ import { CharmNode } from "./charm-node";
 import "./svg";
 import { onAttributeChanged } from "./dom-watcher";
 import { parse } from "./parser";
+import { stringToHTML } from "./qol";
 
 onAttributeChanged('charm-', parse);
+
+document.addEventListener('DOMContentLoaded', () =>
+{
+    document.body.appendChild(stringToHTML('<svg class="fullscreen" id="animation-canvas" xmlns="http://www.w3.org/2000/svg">'));
+})
 
 /**
  * Transforms the element into a Charm Node
