@@ -47,3 +47,18 @@ export class Vec2
         return new Vec2(this.x * k, this.y * k);
     }
 }
+
+export function getCoords(element: HTMLElement)
+{
+    const rect = element.getBoundingClientRect();
+
+    const x = rect.x + document.documentElement.scrollLeft;
+    const y = rect.y + document.documentElement.scrollTop;
+    
+    return {
+        x: x,
+        y: y,
+        width: rect.width,
+        height: rect.height
+    }
+}

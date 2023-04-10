@@ -1,8 +1,8 @@
 import { Animation, AnimationOptions, LineAnimation } from "./animation";
 import { TimingFunction } from "./animations";
-import { Vec2 } from "./geometry";
+import { Vec2, getCoords } from "./geometry";
 import { Line } from "./line";
-import { stringToHTML } from "./qol";
+import { fixToElement } from "./svg";
 
 interface Instructions
 {
@@ -34,6 +34,7 @@ interface LineAnimationInstructions
 
 export function parse(element: HTMLElement, instructionsString: string, attrName: string)
 {
+    console.log(element);
     const instructions = parseToJSON(instructionsString) as Instructions;
 
     const animations: Animation[] = [];
@@ -54,18 +55,10 @@ export function parse(element: HTMLElement, instructionsString: string, attrName
             const animationLines = await animation.animate();
             animationLines.forEach(line => lines.push(line));
         }
-
+        
         fixToElement(element, lines);
     })
-}
 
-function fixToElement(element: HTMLElement, lines: Line[])
-{
-    let svg = element.querySelector('.animation-result') as HTMLElement;
-    if(svg == null)
-    {
-        svg = stringToHTML('<svg xmlns="http://www.w3.org/2000/svg" class="animation-result"></svg>');
-    }
 }
 
 const whitespaces = /\s/g;
@@ -264,13 +257,14 @@ function parseNumberCssSelector(s: string, element: HTMLElement): number | undef
 }
 
 const positions = ['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'];
-const windowBoundingRect: DOMRect = {
-    x: 0, y: 0, width: window.innerWidth, height: window.innerHeight, 
-    bottom: 0, left: 0, right: 0, top: 0, toJSON: () => {}
-};
 
 function parseVectorCssSelector(s: string, element: HTMLElement): Vec2 | undefined
 {
+    const windowBoundingRect: DOMRect = {
+        x: 0, y: 0, width: window.innerWidth, height: window.innerHeight, 
+        bottom: 0, left: 0, right: 0, top: 0, toJSON: () => {}
+    };
+
     const sHasDots = s.includes('.');
     const indexOfFirstDot = sHasDots ? s.indexOf('.') : s.length;
 
@@ -307,7 +301,7 @@ function parseVectorCssSelector(s: string, element: HTMLElement): Vec2 | undefin
 
 function getLocalPosition(element: HTMLElement | undefined, selector: string, rect?: DOMRect)
 {
-    const box = rect ? rect : element!.getBoundingClientRect();
+    const box = rect ? rect : getCoords(element!);
 
     switch(selector)
     {

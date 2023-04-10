@@ -1,5 +1,4 @@
 import { TimingFunction } from "./animations";
-import { Vec2 } from "./geometry";
 import { Line } from "./line";
 import { getLineTips } from "./parser";
 
@@ -52,21 +51,8 @@ export class Animation
 
     animatePromise(resolve: (out: Line[] | PromiseLike<Line[]>) => void)
     {
-        let longestAnimationPointer: LineAnimation | null = null;
-        let longestAnimationLength: number = 0;
-        
-        for(const animation of this.lineAnimations)
-        {
-            const animationLength = animation.options!.delay! + animation.options!.duration!;
-
-            if(animationLength > longestAnimationLength)
-            {
-                longestAnimationLength = animationLength;
-                longestAnimationPointer = animation;
-            }
-        }
-
         const lines: Line[] = [];
+        let finished = 0;
 
         for(const animation of this.lineAnimations)
         {
@@ -79,13 +65,24 @@ export class Animation
                     resolve(lines);
 
                 const line = new Line(from![0], from![1]);
+
+                if(animation.options!.stick)
+                    line.svg.setAttribute('isSticky', animation.from);
+
+                line.svg.setAttribute('endTo', animation.to);
             
                 document.querySelector('#animation-canvas')!.appendChild(line.svg);
             
                 const endFrom = animation.options!.stick || this.globalOptions!.stick ? from![0] : to![0];
 
                 if(!animation.options!.discard!)
+                {
                     lines.push(line);
+                }
+                else
+                {
+                    finished--;
+                }
 
                 line.animateWithMinLengthA(
                     endFrom,
@@ -98,7 +95,9 @@ export class Animation
                     if(animation.options!.discard)
                         line.svg.remove();
 
-                    if(animation == longestAnimationPointer)
+                    finished++;
+
+                    if(finished == lines.length)
                         resolve(lines);
                 });
             }, animation.options!.delay!);

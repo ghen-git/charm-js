@@ -4,7 +4,7 @@ import { Vec2 } from "./geometry";
 
 export class Line implements Animatable
 {
-    svg: SVGElement;
+    svg: HTMLElement;
     from: Vec2;
     to: Vec2;
     length: number;
@@ -16,7 +16,7 @@ export class Line implements Animatable
 
     private animationDelay: number = 0;
 
-    constructor(from?: Vec2, to?: Vec2)
+    constructor(from?: Vec2, to?: Vec2, svg?: HTMLElement)
     {
         if(!from)
             from = Vec2.zero;
@@ -35,15 +35,33 @@ export class Line implements Animatable
 
         this.length = Vec2.distance(from, to);
 
-        this.svg = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        this.svg.setAttribute('x1', from.x.toString());
-        this.svg.setAttribute('y1', from.y.toString());
-        this.svg.setAttribute('x2', to.x.toString());
-        this.svg.setAttribute('y2', to.y.toString());
-        this.svg.setAttribute('stroke', '#e1e1e1');
-        this.svg.setAttribute('stroke-width', '1px');
+        if(!svg)
+        {
+            this.svg = (document.createElementNS('http://www.w3.org/2000/svg', 'line') as Element) as HTMLElement;
+
+            this.svg.setAttribute('x1', from.x.toString());
+            this.svg.setAttribute('y1', from.y.toString());
+            this.svg.setAttribute('x2', to.x.toString());
+            this.svg.setAttribute('y2', to.y.toString());
+            this.svg.setAttribute('stroke', '#e1e1e1');
+            this.svg.setAttribute('stroke-width', '1px');
+        }
+        else
+        {
+            this.svg = svg;
+        }
 
         // document.querySelector('svg')!.appendChild(this.svg);
+    }
+
+    static getFromSvg(svg: HTMLElement)
+    {
+        const x1 = svg.getAttribute('x1');
+        const y1 = svg.getAttribute('y1');
+        const x2 = svg.getAttribute('x2');
+        const y2 = svg.getAttribute('y2');
+
+        return new Line(new Vec2(parseInt(x1!), parseInt(y1!)), new Vec2(parseInt(x2!), parseInt(y2!)), svg);
     }
 
     snapEnd()
