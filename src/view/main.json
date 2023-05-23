@@ -1,0 +1,12 @@
+[
+    {
+        "type": "quad",
+        "snap": "mid-mid",
+        "content": [
+            {
+                "clones": 4,
+                "text": "This is the {i} time this has been cloned"
+            }
+        ]
+    }
+]
